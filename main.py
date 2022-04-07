@@ -36,7 +36,7 @@ def count_score(cards: List[cards.Card]) -> int:
     score = 0
     for crd in cards:
         if crd.value == 'A':
-            score += 11 if score > 10 else 1
+            score += 11 if score >= 10 else 1
         elif crd.value in ['J', 'Q', 'K']:
             score += _vals[crd.value]
         else:
