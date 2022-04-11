@@ -42,11 +42,11 @@ class Card(CardBase):
 
 
 class Cards(CardBase):
-    def __init__(self, deck_type: Literal['standart', 'joker', 'fool', 'preference', 'thousand'] = 'joker') -> None:
+    def __init__(self, deck_type: Literal['standard', 'joker', 'fool', 'preference', 'thousand'] = 'joker') -> None:
         """
         Create a new deck of cards
 
-        standart: standard 52 card deck
+        standard: standard 52 card deck
         joker: standard 52 card deck with 2 jokers
         fool: 36 cards (short deck, from sixes to aces)
         preference: 32 cards (small deck, from sevens to aces)
