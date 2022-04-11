@@ -24,7 +24,7 @@ from rich.prompt import Prompt
 import cards
 
 con = Console()
-c = cards.Cards('standart')
+c = cards.Cards('standard')
 
 
 def count_score(cards: List[cards.Card]) -> int:
