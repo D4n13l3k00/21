@@ -66,6 +66,128 @@ def banner() -> None:
 def wait() -> None:
     con.input("[yellow]Press any key to continue...[/]")
 
+def format_hand(hand: list[cards_lib.Card]) -> str:
+    return ", ".join(map(str, hand))
+
+def safe_pick(deck: cards_lib.Cards) -> cards_lib.Card | None:
+    try:
+        return deck.pick_card()
+    except ValueError:
+        return None
+
+def play_solo(deck: cards_lib.Cards) -> None:
+    deck.new_cards()
+    deck.shuffle()
+
+    try:
+        hand = [deck.pick_card() for _ in range(2)]
+    except ValueError:
+        con.print("[red]Deck is empty. Restarting...[/]")
+        wait()
+        return
+
+    while True:
+        con.print("•", format_hand(hand), style="cyan")
+        score = count_score(hand)
+        con.print(f"[cyan]• Your score: {score}[/]")
+        con.print(f"[cyan]• Cards left: {deck.cards_left}[/]")
+
+        if score > 21:
+            con.print("[red]You lose![/]")
+            wait()
+            return
+        if score == 21:
+            con.print("[green]You win![/]")
+            wait()
+            return
+
+        if Prompt.ask("[green]Pick a card?[/]", choices=["y", "n"], default="y") != "y":
+            con.print("[green]The end[/]")
+            wait()
+            return
+
+        card = safe_pick(deck)
+        if card is None:
+            con.print("[yellow]No cards left in the deck.[/]")
+            wait()
+            return
+        hand.append(card)
+
+def play_vs_dealer(deck: cards_lib.Cards) -> None:
+    """
+    Virtual dealer mode (blackjack-like):
+    - player and dealer start with 2 cards
+    - player hits/stands
+    - dealer draws until score >= 17
+    - closest to 21 wins (without busting)
+    """
+    deck.new_cards()
+    deck.shuffle()
+
+    try:
+        player = [deck.pick_card() for _ in range(2)]
+        dealer = [deck.pick_card() for _ in range(2)]
+    except ValueError:
+        con.print("[red]Deck is empty. Restarting...[/]")
+        wait()
+        return
+
+    # Player turn
+    while True:
+        con.print(f"[magenta]• Dealer: {dealer[0]}, ??[/]")
+        con.print("•", format_hand(player), style="cyan")
+        p_score = count_score(player)
+        con.print(f"[cyan]• Your score: {p_score}[/]")
+        con.print(f"[cyan]• Cards left: {deck.cards_left}[/]")
+
+        if p_score > 21:
+            con.print("[red]You bust. Dealer wins.[/]")
+            con.print(f"[magenta]• Dealer hand: {format_hand(dealer)} ({count_score(dealer)})[/]")
+            wait()
+            return
+        if p_score == 21:
+            break
+
+        if Prompt.ask("[green]Pick a card?[/]", choices=["y", "n"], default="y") != "y":
+            break
+
+        card = safe_pick(deck)
+        if card is None:
+            con.print("[yellow]No cards left in the deck.[/]")
+            wait()
+            return
+        player.append(card)
+
+    # Dealer turn
+    con.print(f"[magenta]• Dealer hand: {format_hand(dealer)}[/]")
+    while True:
+        d_score = count_score(dealer)
+        if d_score >= 17:
+            break
+        card = safe_pick(deck)
+        if card is None:
+            break
+        dealer.append(card)
+        con.print(f"[magenta]• Dealer picks: {card}[/]")
+
+    # Result
+    p_score = count_score(player)
+    d_score = count_score(dealer)
+    con.print(f"[cyan]• Your final: {format_hand(player)} ({p_score})[/]")
+    con.print(f"[magenta]• Dealer final: {format_hand(dealer)} ({d_score})[/]")
+
+    if p_score > 21:
+        con.print("[red]You lose.[/]")
+    elif d_score > 21:
+        con.print("[green]Dealer busts. You win![/]")
+    elif p_score > d_score:
+        con.print("[green]You win![/]")
+    elif p_score < d_score:
+        con.print("[red]You lose.[/]")
+    else:
+        con.print("[yellow]Draw.[/]")
+    wait()
+
 def main() -> None:
     deck = cards_lib.Cards("standard")
     while True:
@@ -75,43 +197,17 @@ def main() -> None:
         if Prompt.ask("[green]Start game?[/]", choices=["y", "n"], default="y") != "y":
             continue
 
-        deck.new_cards()
-        deck.shuffle()
-
-        try:
-            hand = [deck.pick_card() for _ in range(2)]
-        except ValueError:
-            con.print("[red]Deck is empty. Restarting...[/]")
-            wait()
-            continue
-
-        while True:
-            con.print("•", ", ".join(map(str, hand)), style="cyan")
-            score = count_score(hand)
-            con.print(f"[cyan]• Your score: {score}[/]")
-            con.print(f"[cyan]• Cards left: {deck.cards_left}[/]")
-
-            if score > 21:
-                con.print("[red]You lose![/]")
-                wait()
-                break
-            if score == 21:
-                con.print("[green]You win![/]")
-                wait()
-                break
-
-            if Prompt.ask("[green]Pick a card?[/]", choices=["y", "n"], default="y") != "y":
-                con.print("[green]The end[/]")
-                wait()
-                break
-
-            try:
-                card = deck.pick_card()
-            except ValueError:
-                con.print("[yellow]No cards left in the deck.[/]")
-                wait()
-                break
-            hand.append(card)
+        mode = Prompt.ask(
+            "[green]Mode[/] ([cyan]solo[/] / [magenta]dealer[/])",
+            choices=["solo", "dealer"],
+            default="dealer",
+        )
+        con.clear()
+        banner()
+        if mode == "solo":
+            play_solo(deck)
+        else:
+            play_vs_dealer(deck)
 
 
 if __name__ == "__main__":
