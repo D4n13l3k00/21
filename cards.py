@@ -1,4 +1,4 @@
-"""
+r"""
 .------.------.------.------.------.------.------.------.------.------.
 |D.--. |4.--. |N.--. |1.--. |3.--. |L.--. |3.--. |K.--. |0.--. |0.--. |
 | :/\: | :/\: | :(): | :/\: | :(): | :/\: | :(): | :/\: | :/\: | :/\: |
@@ -15,34 +15,40 @@
            https://creativecommons.org/licenses/by-nc-nd/4.0           
 """
 
+from __future__ import annotations
+
 import random
-from typing import *
+from dataclasses import dataclass
+from typing import ClassVar, Literal
 
 
 class CardBase:
-    def __init__(self) -> None:
-        self.suits = {
-            "H": "❤",
-            "D": "♦",
-            "C": "♠",
-            "S": "♣",
-            "JR": "🂿",
-            "JB": "🃏",
-        }
+    # Note: suit letters follow common convention:
+    # H=hearts, D=diamonds, C=clubs, S=spades.
+    SUITS: ClassVar[dict[str, str]] = {
+        "H": "❤",
+        "D": "♦",
+        "C": "♣",
+        "S": "♠",
+        "JR": "🂿",
+        "JB": "🃏",
+    }
 
 
+@dataclass(frozen=True, slots=True)
 class Card(CardBase):
-    def __init__(self, suit, value):
-        super().__init__()
-        self.suit = suit
-        self.value = value
+    suit: str
+    value: str
 
     def __str__(self):
-        return f"{self.value}{self.suits[self.suit]}"
+        return f"{self.value}{self.SUITS[self.suit]}"
 
 
 class Cards(CardBase):
-    def __init__(self, deck_type: Literal['standard', 'joker', 'fool', 'preference', 'thousand'] = 'joker') -> None:
+    def __init__(
+        self,
+        deck_type: Literal["standard", "joker", "fool", "preference", "thousand"] = "joker",
+    ) -> None:
         """
         Create a new deck of cards
 
@@ -54,7 +60,7 @@ class Cards(CardBase):
         """
 
         super().__init__()
-        self.cards = []
+        self.cards: list[Card] = []
         self.deck_type = deck_type
         self.new_cards()
 
@@ -64,20 +70,22 @@ class Cards(CardBase):
         """
 
         self.cards = []
-        _values = ['J', 'Q', 'K', 'A']
+        _values = ["J", "Q", "K", "A"]
         _start = 2
-        if self.deck_type == 'fool':
+        if self.deck_type == "fool":
             _start = 6
-        elif self.deck_type == 'preference':
+        elif self.deck_type == "preference":
             _start = 7
-        elif self.deck_type == 'thousand':
+        elif self.deck_type == "thousand":
             _start = 9
-        for suit in ['C', 'D', 'H', 'S']:
-            self.cards.extend(Card(suit, value)
-                              for value in list(range(_start, 11)) + _values)
+        for suit in ["C", "D", "H", "S"]:
+            self.cards.extend(
+                Card(suit, value)
+                for value in [*map(str, range(_start, 11)), *_values]
+            )
 
-        if self.deck_type == 'joker':
-            self.cards.extend([Card('JR', 'JK'), Card('JB', 'JK')])
+        if self.deck_type == "joker":
+            self.cards.extend([Card("JR", "JK"), Card("JB", "JK")])
 
     @property
     def has_jokers(self) -> bool:
@@ -86,7 +94,7 @@ class Cards(CardBase):
         :return: A boolean value.
         """
 
-        return any(card.value == 'JK' for card in self.cards)
+        return any(card.value == "JK" for card in self.cards)
 
     @property
     def cards_left(self) -> int:
@@ -103,7 +111,11 @@ class Cards(CardBase):
         """
         random.shuffle(self.cards)
 
-    def pick_card(self, random_card: bool = True, remove_card_from_deck: bool = True) -> Card:
+    def pick_card(
+        self,
+        random_card: bool = True,
+        remove_card_from_deck: bool = True,
+    ) -> Card:
         """
         Pick a random card from the deck
 
